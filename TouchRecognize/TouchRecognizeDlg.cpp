@@ -14,17 +14,26 @@
 #define SEL_2ND_RECTANGLE	2
 #define SEL_POLYGON_RANGE	1
 #define SEL_POLYGON_ALGORITHM 2
-#define SEL_CYCLE 1
-#define PI 3.141592653589
+#define SEL_CYCLE_ALGORITHM	1
+#define PI 3.141592653589f
 #define CIRCLE_TEST 0
 #define RECTANGLE_TEST 0
 #define POLYGON_TEST 0
+#define CYCLE_TEST 0
 #define ABS_IS_LEFT 0
 #endif
 
-const float t_CycleSlopeTable[10] = {
+const float t_CycleSlopeTable[10] = { // 사이클 기울기 테이블
 	INFINITY,5.67128f,2.74748f,1.73205f,1.19175f,0.8391f,0.57735f,0.36397f,0.176327f,0
-}; // 임의로 추가한 사이클 기울기 테이블
+};
+
+const int t_IntegerSlopeTable100[10] = { // 100배 정수값 사이클 기울기 테이블
+	40000,567,275,173,119,84,58,36,18,0
+};
+
+const int t_IntegerSlopeTable1000[10] = { // 1000배 정수값 사이클 기울기 테이블
+	400000,5671,2747,1732,1192,839,577,364,176,0
+};
 
 //const s_Polygon6pData  t_3rdPolygon6p1stTable[eDivisonState6][6] =
 const CPoint  t_1stRectangleTable[eDivisonState6][4] = {	//	[5][4] 배열
@@ -788,7 +797,7 @@ void CTouchRecognizeDlg::CheckPointAndDisplay(CPoint point)
 					{
 						j = (i + 1) % 6; //점이 선분(t_2ndPolygon6pTable[n][i] ~ t_2ndPolygon6pTable[n][j])의 y좌표 사이에 있다.
 #if (SEL_POLYGON_ALGORITHM==2)
-//    Return: >0 for P2  선분 왼쪽
+//    isLeft: >0 for P2  선분 왼쪽
 //            =0 for P2  선분 위
 //            <0 for P2  선분 오른쪽
 						if (t_2ndPolygon6pTable[n][i].y <= point.y) 
@@ -813,7 +822,9 @@ void CTouchRecognizeDlg::CheckPointAndDisplay(CPoint point)
 						}
 #endif
 						// interSection는 점을 지나는 수평선과 선분(t_2ndPolygon6pTable[n][i] ~ t_2ndPolygon6pTable[n][j])의 교점 
+#if (SEL_POLYGON_ALGORITHM==0||SEL_POLYGON_ALGORITHM==1)
 						if ((t_2ndPolygon6pTable[n][i].y > point.y) != (t_2ndPolygon6pTable[n][j].y > point.y)) // 선분을 이루는 두 점의 y좌표가 수평선을 중간에 둔다.
+#endif
 						{
 #if (SEL_POLYGON_ALGORITHM==0)
 							interSection =
@@ -1017,8 +1028,36 @@ void CTouchRecognizeDlg::CheckPointAndDisplay(CPoint point)
 				{
 					j = (i + 1) % 6; //점이 선분의 y좌표 사이에 있다.
 
+#if (SEL_POLYGON_ALGORITHM==2)
+//    isLeft: >0 for P2  선분 왼쪽
+//            =0 for P2  선분 위
+//            <0 for P2  선분 오른쪽
+					if (t_3rdPolygon6p1stTable[n][i].y <= point.y)
+					{
+						if (t_3rdPolygon6p1stTable[n][j].y > point.y)
+						{
+							if (isLeft(t_3rdPolygon6p1stTable[n][i], t_3rdPolygon6p1stTable[n][j], point) > 0)
+							{
+								iCrosses++;
+							}
+						}
+					}
+					else
+					{
+						if (t_3rdPolygon6p1stTable[n][j].y <= point.y)
+						{
+							if (isLeft(t_3rdPolygon6p1stTable[n][i], t_3rdPolygon6p1stTable[n][j], point) < 0)
+							{
+								iCrosses--;
+							}
+						}
+					}
+#endif
+
+#if (SEL_POLYGON_ALGORITHM==0||SEL_POLYGON_ALGORITHM==1)
 					// interSection는 점을 지나는 수평선과 선분의 교점 
 					if ((t_3rdPolygon6p1stTable[n][i].y > point.y) != (t_3rdPolygon6p1stTable[n][j].y > point.y)) // 선분을 이루는 두 점의 y좌표가 수평선을 중간에 둔다.
+#endif
 					{
 #if (SEL_POLYGON_ALGORITHM==0)
 						interSection =
@@ -1093,8 +1132,36 @@ void CTouchRecognizeDlg::CheckPointAndDisplay(CPoint point)
 				{
 					j = (i + 1) % 6; //점이 선분의 y좌표 사이에 있다.
 
+#if (SEL_POLYGON_ALGORITHM==2)
+//    isLeft: >0 for P2  선분 왼쪽
+//            =0 for P2  선분 위
+//            <0 for P2  선분 오른쪽
+					if (t_3rdPolygon6p2ndTable[n][i].y <= point.y)
+					{
+						if (t_3rdPolygon6p2ndTable[n][j].y > point.y)
+						{
+							if (isLeft(t_3rdPolygon6p2ndTable[n][i], t_3rdPolygon6p2ndTable[n][j], point) > 0)
+							{
+								iCrosses++;
+							}
+						}
+					}
+					else
+					{
+						if (t_3rdPolygon6p2ndTable[n][j].y <= point.y)
+						{
+							if (isLeft(t_3rdPolygon6p2ndTable[n][i], t_3rdPolygon6p2ndTable[n][j], point) < 0)
+							{
+								iCrosses--;
+							}
+						}
+					}
+#endif
+
 					// interSection는 점을 지나는 수평선과 선분의 교점 
+#if (SEL_POLYGON_ALGORITHM==0||SEL_POLYGON_ALGORITHM==1)
 					if ((t_3rdPolygon6p2ndTable[n][i].y > point.y) != (t_3rdPolygon6p2ndTable[n][j].y > point.y)) // 선분을 이루는 두 점의 y좌표가 수평선을 중간에 둔다.
+#endif
 					{
 #if (SEL_POLYGON_ALGORITHM==0)
 						interSection =
@@ -1154,103 +1221,293 @@ void CTouchRecognizeDlg::CheckPointAndDisplay(CPoint point)
 	case eAlgorithmType_1rdCycleAlgorithm:
 
 		float radian;
+		int integer_radian;
 		int degree;
 		int areaSelect;
 		float m;
+		int M;
+		int divisor; // 기울기 알고리즘에서 나눗셈 하지 않기 위함
 
-
-		C2 = ((point.x - t_1rdCycleAlgorithm[0].center_x) * (point.x - t_1rdCycleAlgorithm[0].center_x))
-			+ ((point.y - t_1rdCycleAlgorithm[0].center_y) * (point.y - t_1rdCycleAlgorithm[0].center_y)); // C² = A² + B²
-
-
-		if ((C2 < (t_1rdCycleAlgorithm[0].radius * t_1rdCycleAlgorithm[0].radius))
-			&& (C2 >= (t_1rdCycleAlgorithm[1].radius * t_1rdCycleAlgorithm[1].radius))) // C²이 R²보다 작고 r²보다 크면 원 안에 있다.
+#if (CYCLE_TEST==1)
+		start_time = GetTickCount64();
+		for (int test_count = 0; test_count < 1000000; test_count++)
+#endif
 		{
-#if (SEL_CYCLE==0)
-			radian = (float)(atan2(point.y - t_1rdCycleAlgorithm[0].center_y, point.x - t_1rdCycleAlgorithm[0].center_x));
-			degree = (int)(180 / PI * radian); // (180/PI)*라디안 = 각도
+			C2 = ((point.x - t_1rdCycleAlgorithm[0].center_x) * (point.x - t_1rdCycleAlgorithm[0].center_x))
+				+ ((point.y - t_1rdCycleAlgorithm[0].center_y) * (point.y - t_1rdCycleAlgorithm[0].center_y)); // C² = A² + B²
 
-			if (degree >= 0)
-			{
-				areaSelect = degree / 10 + 9;
-			}
-			else if (degree > -90)
-			{
-				areaSelect = degree / 10 + 8;
-			}
-			else
-			{
-				areaSelect = degree / 10 + 44;
-			}
 
-			display_text.Format(_T("Inside, %d°, idx : %d, (%d,%d)"), degree, areaSelect, point.x, point.y);
+			if ((C2 <= (t_1rdCycleAlgorithm[0].radius * t_1rdCycleAlgorithm[0].radius))
+				&& (C2 >= (t_1rdCycleAlgorithm[1].radius * t_1rdCycleAlgorithm[1].radius))) // r² < C² < R²이면 원 안에 있다.
+			{
+#if (SEL_CYCLE_ALGORITHM==0)
+				//	각도 계산하는 초기의 알고리즘
+				radian = (float)(atan2(point.y - t_1rdCycleAlgorithm[0].center_y, point.x - t_1rdCycleAlgorithm[0].center_x));
+				degree = (int)(180 / PI * radian); // (180/PI)*라디안 = 각도
+
+				if (degree >= 0)
+				{
+					areaSelect = degree / 10 + 9;
+				}
+				else if (degree > -90)
+				{
+					areaSelect = degree / 10 + 8;
+				}
+				else
+				{
+					areaSelect = degree / 10 + 44;
+				}
+
+				display_text.Format(_T("Inside, %d°, idx : %d, (%d,%d)"), degree, areaSelect, point.x, point.y);
+
+#elif (SEL_CYCLE_ALGORITHM==1)
+#if 0
+				//	라디안 계산하고 나눗셈 없앤 알고리즘
+				radian = (float)(atan2(point.y - t_1rdCycleAlgorithm[0].center_y, point.x - t_1rdCycleAlgorithm[0].center_x));
+				//	degree = (int)(180 / PI * radian); // (180/PI)*라디안 = 각도
+				degree = 57.2957795f * radian;
+
+				//	180 / PI는 57.2957795
+				if (degree >= 0)
+				{
+					areaSelect = 0.1f * degree + 9;	// (180 / PI * radian) / 10 + 9 
+				}
+				else if (degree > -90)
+				{
+					areaSelect = 0.1f * degree + 8;	// (180 / PI * radian) / 10 + 8
+				}
+				else
+				{
+					areaSelect = 0.1f * degree + 44; // (180 / PI * radian) / 10 + 44 
+				}
 #else
-		// 직선의 기울기로 구성하는 알고리즘
-			m = (float)(t_1rdCycleAlgorithm[0].center_y - point.y) / (float)(point.x - t_1rdCycleAlgorithm[0].center_x);
+				//	라디안 계산하고 나눗셈 없앤 알고리즘 + degree에 10 곱함
+				radian = (float)(atan2(point.y - t_1rdCycleAlgorithm[0].center_y, point.x - t_1rdCycleAlgorithm[0].center_x));
+				//	degree = (int)(180 / PI * radian); // (180/PI)*라디안 = 각도
+				degree = 572.957795f * radian;
 
-			if (point.x >= t_1rdCycleAlgorithm[0].center_x)
-			{
-				if (point.y <= t_1rdCycleAlgorithm[0].center_y)
+				//	180 / PI는 57.2957795
+				if (degree >= 0)
 				{
-					//1사분면, 그냥 그대로
-					for (int i = 0; i < 9; i++)
+					areaSelect = degree + 9;	// (180 / PI * radian) / 10 + 9 
+				}
+				else if (degree > -900)
+				{
+					areaSelect = degree + 8;	// (180 / PI * radian) / 10 + 8
+				}
+				else
+				{
+					areaSelect = degree + 44; // (180 / PI * radian) / 10 + 44 
+				}
+#endif
+				display_text.Format(_T("Inside, %d°, idx : %d, (%d,%d)"), degree, areaSelect, point.x, point.y);
+
+#elif (SEL_CYCLE_ALGORITHM==2)
+				// 직선의 기울기로 구성하는 알고리즘
+				m = (float)(t_1rdCycleAlgorithm[0].center_y - point.y) / (float)(point.x - t_1rdCycleAlgorithm[0].center_x);
+
+				if (point.x >= t_1rdCycleAlgorithm[0].center_x)
+				{
+					if (point.y <= t_1rdCycleAlgorithm[0].center_y)
 					{
-						if ((t_CycleSlopeTable[i + 1] <= m) && (t_CycleSlopeTable[i] >= m))
+						//1사분면, 그냥 그대로
+						for (int i = 0; i < 9; i++)
 						{
-							areaSelect = i;
-							break;
+							if ((t_CycleSlopeTable[i + 1] <= m) && (t_CycleSlopeTable[i] >= m))
+							{
+								areaSelect = i;
+								break;
+							}
+						}
+					}
+					else
+					{
+						//4사분면
+						for (int i = 0; i < 9; i++)
+						{
+							if ((-t_CycleSlopeTable[9 - i] >= m) && (-t_CycleSlopeTable[8 - i] <= m))
+							{
+								areaSelect = i + 9;
+								break;
+							}
 						}
 					}
 				}
 				else
 				{
-					//4사분면
-					for (int i = 0; i < 9; i++)
+					if (point.y <= t_1rdCycleAlgorithm[0].center_y)
 					{
-						if ((-t_CycleSlopeTable[9 - i] >= m) && (-t_CycleSlopeTable[8 - i] <= m))
+						//2사분면
+						for (int i = 0; i < 9; i++)
 						{
-							areaSelect = i + 9;
-							break;
+							if ((-t_CycleSlopeTable[9 - i] >= m) && (-t_CycleSlopeTable[8 - i] <= m))
+							{
+								areaSelect = i + 27;
+								break;
+							}
+						}
+					}
+					else
+					{
+						//3사분면
+						for (int i = 0; i < 9; i++)
+						{
+							if ((t_CycleSlopeTable[i + 1] <= m) && (t_CycleSlopeTable[i] >= m))
+							{
+								areaSelect = i + 18;
+								break;
+							}
 						}
 					}
 				}
-			}
-			else
-			{
-				if (point.y <= t_1rdCycleAlgorithm[0].center_y)
-				{
-					//2사분면
-					for (int i = 0; i < 9; i++)
-					{
-						if ((-t_CycleSlopeTable[9 - i] >= m) && (-t_CycleSlopeTable[8 - i] <= m))
-						{
-							areaSelect = i + 27;
-							break;
-						}
-					}
-				}
-				else
-				{
-					//3사분면
-					for (int i = 0; i < 9; i++)
-					{
-						if ((t_CycleSlopeTable[i + 1] <= m) && (t_CycleSlopeTable[i] >= m))
-						{
-							areaSelect = i + 18;
-							break;
-						}
-					}
-				}
-			}
 
-			display_text.Format(_T("Inside, m : %f, idx : %d, (%d,%d)"), m, areaSelect, point.x, point.y);
+				display_text.Format(_T("Inside, m : %f, idx : %d, (%d,%d)"), m, areaSelect, point.x, point.y);
+
+#elif (SEL_CYCLE_ALGORITHM==3)
+				// 직선의 기울기 알고리즘 최적화버전
+				M = t_1rdCycleAlgorithm[0].center_y - point.y; // M은 기울기 m에서 나눗셈을 제거한 값
+				//m = (float)(t_1rdCycleAlgorithm[0].center_y - point.y) / (float)(point.x - t_1rdCycleAlgorithm[0].center_x);
+
+				divisor = point.x - t_1rdCycleAlgorithm[0].center_x; // divisor는 기존의 기울기 구하는 나눗셈의 제수
+
+				if (divisor >= 0) // (point.x - t_1rdCycleAlgorithm[0].center_x)가 양수
+				{
+					if (point.y <= t_1rdCycleAlgorithm[0].center_y)
+					{
+						//1사분면, 그냥 그대로
+						for (int i = 0; i < 9; i++)
+						{
+							if (t_CycleSlopeTable[i + 1] * divisor <= M)
+							{
+								areaSelect = i;
+								break;
+							}
+						}
+					}
+					else
+					{
+						//4사분면
+						for (int i = 0; i < 9; i++)
+						{
+							if (-t_CycleSlopeTable[8 - i] * divisor <= M)
+							{
+								areaSelect = i + 9;
+								break;
+							}
+						}
+					}
+				}
+				else // (point.x - t_1rdCycleAlgorithm[0].center_x)가 음수
+				{
+					if (point.y <= t_1rdCycleAlgorithm[0].center_y)
+					{
+						//2사분면
+						for (int i = 0; i < 9; i++)
+						{
+							if (-t_CycleSlopeTable[8 - i] * divisor >= M)
+							{
+								areaSelect = i + 27;
+								break;
+							}
+						}
+					}
+					else
+					{
+						//3사분면
+						for (int i = 0; i < 9; i++)
+						{
+							if (t_CycleSlopeTable[i + 1] * divisor >= M)
+							{
+								areaSelect = i + 18;
+								break;
+							}
+						}
+					}
+				}
+				//m = (float)(t_1rdCycleAlgorithm[0].center_y - point.y) / (float)(point.x - t_1rdCycleAlgorithm[0].center_x);
+				// m은 직선의 기울기 확인용이고 나중에 주석 처리해야한다.
+				display_text.Format(_T("Inside, M : %d, idx : %d, (%d,%d)"), M, areaSelect, point.x, point.y);
+
+#elif (SEL_CYCLE_ALGORITHM==4)
+
+				// 직선의 기울기 알고리즘 최적화 + 정수화 100배 테이블
+				M = t_1rdCycleAlgorithm[0].center_y - point.y; // M은 (기울기 m에서 나눗셈을 제거한 값) * 100
+				//m = (float)(t_1rdCycleAlgorithm[0].center_y - point.y) / (float)(point.x - t_1rdCycleAlgorithm[0].center_x);
+				//t_IntegerSlopeTable100는 기울기를 100배한 정수 테이블
+
+				divisor = point.x - t_1rdCycleAlgorithm[0].center_x; // divisor는 기존의 기울기 구하는 나눗셈의 제수
+
+				if (divisor >= 0) // (point.x - t_1rdCycleAlgorithm[0].center_x)가 양수
+				{
+					if (point.y <= t_1rdCycleAlgorithm[0].center_y)
+					{
+						//1사분면, 그냥 그대로
+						for (int i = 0; i < 9; i++)
+						{
+							if (t_IntegerSlopeTable100[i + 1] * divisor <= M)
+							{
+								areaSelect = i;
+								break;
+							}
+						}
+					}
+					else
+					{
+						//4사분면
+						for (int i = 0; i < 9; i++)
+						{
+							if (-t_IntegerSlopeTable100[8 - i] * divisor <= M)
+							{
+								areaSelect = i + 9;
+								break;
+							}
+						}
+					}
+				}
+				else // (point.x - t_1rdCycleAlgorithm[0].center_x)가 음수
+				{
+					if (point.y <= t_1rdCycleAlgorithm[0].center_y)
+					{
+						//2사분면
+						for (int i = 0; i < 9; i++)
+						{
+							if (-t_IntegerSlopeTable100[8 - i] * divisor >= M)
+							{
+								areaSelect = i + 27;
+								break;
+							}
+						}
+					}
+					else
+					{
+						//3사분면
+						for (int i = 0; i < 9; i++)
+						{
+							if (t_IntegerSlopeTable100[i + 1] * divisor >= M)
+							{
+								areaSelect = i + 18;
+								break;
+							}
+						}
+					}
+				}
+				//m = (float)(t_1rdCycleAlgorithm[0].center_y - point.y) / (float)(point.x - t_1rdCycleAlgorithm[0].center_x);
+				// m은 직선의 기울기 확인용이고 나중에 주석 처리해야한다.
+				display_text.Format(_T("Inside, M : %d, idx : %d, (%d,%d)"), M, areaSelect, point.x, point.y);
+
+#else
 
 #endif
+			}
+			else
+			{
+				display_text.Format(_T("Outside"));
+			}
 		}
-		else
-		{
-			display_text.Format(_T("Outside"));
-		}
+#if (CYCLE_TEST==1)
+		end_time = GetTickCount64();
+		display_text.Format(_T("%dms"), end_time - start_time);
+#endif
 		
 		SetDlgItemText(IDC_STATIC_VALUE, display_text);
 		break;
