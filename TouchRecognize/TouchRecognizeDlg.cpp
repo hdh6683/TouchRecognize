@@ -1261,7 +1261,7 @@ void CTouchRecognizeDlg::CheckPointAndDisplay(CPoint point)
 				display_text.Format(_T("Inside, %d°, idx : %d, (%d,%d)"), degree, areaSelect, point.x, point.y);
 
 #elif (SEL_CYCLE_ALGORITHM==1)
-#if 0
+#if 1
 				//	라디안 계산하고 나눗셈 없앤 알고리즘
 				radian = (float)(atan2(point.y - t_1rdCycleAlgorithm[0].center_y, point.x - t_1rdCycleAlgorithm[0].center_x));
 				//	degree = (int)(180 / PI * radian); // (180/PI)*라디안 = 각도
@@ -1274,24 +1274,24 @@ void CTouchRecognizeDlg::CheckPointAndDisplay(CPoint point)
 				}
 				else if (degree > -90)
 				{
-					areaSelect = 0.1f * degree + 8;	// (180 / PI * radian) / 10 + 8
+					areaSelect = 0.1f * degree + 9;	// (180 / PI * radian) / 10 + 8
 				}
 				else
 				{
-					areaSelect = 0.1f * degree + 44; // (180 / PI * radian) / 10 + 44 
+					areaSelect = 0.1f * degree + 45; // (180 / PI * radian) / 10 + 44 
 				}
 #else
-				//	라디안 계산하고 나눗셈 없앤 알고리즘 + degree에 10 곱함
+				//	라디안 계산하고 나눗셈 없앤 알고리즘 + degree에 0.1 곱함
 				radian = (float)(atan2(point.y - t_1rdCycleAlgorithm[0].center_y, point.x - t_1rdCycleAlgorithm[0].center_x));
 				//	degree = (int)(180 / PI * radian); // (180/PI)*라디안 = 각도
-				degree = 572.957795f * radian;
+				degree = (int)(5.72957795f * radian);
 
 				//	180 / PI는 57.2957795
 				if (degree >= 0)
 				{
 					areaSelect = degree + 9;	// (180 / PI * radian) / 10 + 9 
 				}
-				else if (degree > -900)
+				else if (degree >= -9)
 				{
 					areaSelect = degree + 8;	// (180 / PI * radian) / 10 + 8
 				}
