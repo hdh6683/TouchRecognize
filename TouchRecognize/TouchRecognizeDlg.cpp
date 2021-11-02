@@ -14,7 +14,7 @@
 #define SEL_2ND_RECTANGLE	2
 #define SEL_POLYGON_RANGE	1
 #define SEL_POLYGON_ALGORITHM 2
-#define SEL_CYCLE_ALGORITHM	5	// 0 ~ 5번 알고리즘이 존재한다
+#define SEL_CYCLE_ALGORITHM	6	// 0 ~ 6번 알고리즘이 존재한다
 
 #define PI 3.141592653589f
 
@@ -25,8 +25,11 @@
 #define CYCLE_TEST 0
 #define ABS_IS_LEFT 0
 
-#define compare(x, y) (((x)<(y)) ? -1 : ((x)==(y)) ? 0 : 1)	// compare 구현하기 위한 매크로
+// compare 구현
+inline int compare(int middle, int searchnum);
+inline int minus_compare(int middle, int searchnum);
 int binsearch(int searchnum, int left, int right);
+int minus_binsearch(int searchnum, int left, int right);
 #endif
 
 const float t_CycleSlopeTable[10] = { // 사이클 기울기 테이블
@@ -35,6 +38,10 @@ const float t_CycleSlopeTable[10] = { // 사이클 기울기 테이블
 
 const int t_IntegerSlopeTable100[10] = { // 100배 정수값 사이클 기울기 테이블
 	40000,567,275,173,119,84,58,36,18,0
+};
+
+const int t_SortedIntegerSlopeTable100[10] = { // 100배 정수값 사이클 기울기 테이블
+	0,18,36,58,84,119,173,275,567,40000
 };
 
 const int t_IntegerSlopeTable1000[10] = { // 1000배 정수값 사이클 기울기 테이블
@@ -1585,89 +1592,38 @@ void CTouchRecognizeDlg::CheckPointAndDisplay(CPoint point)
 				// m은 직선의 기울기 확인용이고 나중에 주석 처리해야한다.
 #if (CYCLE_TEST!=1)
 				display_text.Format(_T("Inside, M : %d, idx : %d, (%d,%d)"), M, areaSelect, point.x, point.y);
-#else
-// 최종 최적화버전, for문을 개선하였다.
-				M = (t_1rdCycleAlgorithm[0].center_y - point.y) * 100; // M은 (기울기 m에서 나눗셈을 제거한 값 M) * 100
+#endif
+#elif (SEL_CYCLE_ALGORITHM==6)
+// 이진 탐색 기법 사용
+				m = (float)(t_1rdCycleAlgorithm[0].center_y - point.y) / (float)(point.x - t_1rdCycleAlgorithm[0].center_x);
+				M = m * 100;
 
-				divisor = point.x - t_1rdCycleAlgorithm[0].center_x; // divisor는 기존의 기울기 구하는 나눗셈의 제수
-
-				if (divisor >= 0) // (point.x - t_1rdCycleAlgorithm[0].center_x)가 양수
+				if (point.x >= t_1rdCycleAlgorithm[0].center_x)
 				{
 					if (point.y <= t_1rdCycleAlgorithm[0].center_y)
 					{
 						//1사분면, 그냥 그대로
-						for (int i = 0; i < 5; i++)
-						{
-							if (t_IntegerSlopeTable100[i + 1] * divisor <= M)
-							{
-								areaSelect = i;
-								break;
-							}
-							else if (t_IntegerSlopeTable100[8 - i] * divisor >= M)
-							{
-								areaSelect = 8 - i;
-								break;
-							}
-						}
+						areaSelect = binsearch(M, 0, 9);
 					}
 					else
 					{
 						//4사분면
-						for (int i = 0; i < 5; i++)
-						{
-							if (-t_IntegerSlopeTable100[8 - i] * divisor <= M)
-							{
-								areaSelect = i + 9;
-								break;
-							}
-							else if (-t_IntegerSlopeTable100[i + 1] * divisor >= M)
-							{
-								areaSelect = 17 - i;
-								break;
-							}
-						}
+						areaSelect = minus_binsearch(-M, 0, 9) + 9;
 					}
 				}
-				else // (point.x - t_1rdCycleAlgorithm[0].center_x)가 음수
+				else
 				{
 					if (point.y <= t_1rdCycleAlgorithm[0].center_y)
 					{
 						//2사분면
-						for (int i = 0; i < 5; i++)
-						{
-							if (-t_IntegerSlopeTable100[8 - i] * divisor >= M)
-							{
-								areaSelect = i + 27;
-								break;
-							}
-							else if (-t_IntegerSlopeTable100[i + 1] * divisor <= M)
-							{
-								areaSelect = 35 - i;
-								break;
-							}
-						}
+						areaSelect = minus_binsearch(-M, 0, 9) + 27;
 					}
 					else
 					{
 						//3사분면
-						for (int i = 0; i < 5; i++)
-						{
-							if (t_IntegerSlopeTable100[i + 1] * divisor >= M)
-							{
-								areaSelect = i + 18;
-								break;
-							}
-							else if (t_IntegerSlopeTable100[8 - i] * divisor <= M)
-							{
-								areaSelect = 26 - i;
-								break;
-							}
-						}
+						areaSelect = binsearch(M, 0, 9) + 18;
 					}
 				}
-
-				//m = (float)(t_1rdCycleAlgorithm[0].center_y - point.y) / (float)(point.x - t_1rdCycleAlgorithm[0].center_x);
-				// m은 직선의 기울기 확인용이고 나중에 주석 처리해야한다.
 #if (CYCLE_TEST!=1)
 				display_text.Format(_T("Inside, M : %d, idx : %d, (%d,%d)"), M, areaSelect, point.x, point.y);
 #endif
@@ -1691,19 +1647,54 @@ void CTouchRecognizeDlg::CheckPointAndDisplay(CPoint point)
 	}
 }
 
-int binsearch(int searchnum, int left, int right)
+int minus_binsearch(int searchnum, int left, int right) // t_SortedIntTable100 안에서 도는 이진 검색 함수
 {
-	/*search list[0] <= list[1] <= ... <= list[n-1] for searchnum.
-		Return its position if found. Otherwise return -1 */
 	int middle;		// left = 0, right = n-1 로 전달
-	while (left <= right) {
+	while (left <= right)
+	{
 		middle = (left + right) / 2;
-		switch (compare(t_IntegerSlopeTable100[middle], searchnum)) {
-		case  -1: left = middle + 1;
+		switch (minus_compare(middle, searchnum))
+		{
+		case  -1:
+			right = middle - 1;
 			break;
-		case   0: return middle;
-		case   1: right = middle - 1;
+		case   0:
+			return middle;
+		case   1:
+			left = middle + 1;
 		}
 	}
 	return -1;
+}
+
+int binsearch(int searchnum, int left, int right) // t_SortedIntTable100 안에서 도는 이진 검색 함수
+{
+	int middle;		// left = 0, right = n-1 로 전달
+	while (left <= right)
+	{
+		middle = (left + right) / 2;
+		switch (compare(middle, searchnum))
+		{
+		case  -1:
+			right = middle - 1;
+			break;
+		case   0:
+			return middle;
+		case   1:
+			left = middle + 1;
+		}
+	}
+	return -1;
+}
+
+inline int minus_compare(int middle, int searchnum)
+{
+	return (searchnum < t_SortedIntegerSlopeTable100[middle]) ? -1 :
+		((t_SortedIntegerSlopeTable100[middle + 1] >= searchnum) && (searchnum >= t_SortedIntegerSlopeTable100[middle])) ? 0 : 1;
+}
+
+inline int compare(int middle, int searchnum)
+{
+	return (searchnum > t_IntegerSlopeTable100[middle]) ? -1 : 
+		((t_IntegerSlopeTable100[middle + 1] <= searchnum) && (searchnum <= t_IntegerSlopeTable100[middle])) ? 0 : 1;
 }
