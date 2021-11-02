@@ -9,16 +9,15 @@
 #endif
 #ifdef _DEBUG
 #define new DEBUG_NEW
-#define SEL_CIRCLE	1
-#define SEL_1ST_RECTANGLE	2
-#define SEL_2ND_RECTANGLE	2
+#define SEL_CIRCLE_ALGORITHM	1
+#define SEL_RECTANGLE_ALGORITHM	1
 #define SEL_POLYGON_RANGE	1
-#define SEL_POLYGON_ALGORITHM 2
+#define SEL_POLYGON_ALGORITHM 1
 #define SEL_CYCLE_ALGORITHM	6	// 0 ~ 6번 알고리즘이 존재한다
 
 #define PI 3.141592653589f
 
-#define TEST_COUNT 1000000
+#define TEST_COUNT 10000000
 #define CIRCLE_TEST 0
 #define RECTANGLE_TEST 0
 #define POLYGON_TEST 0
@@ -680,70 +679,33 @@ void CTouchRecognizeDlg::CheckPointAndDisplay(CPoint point)
 
 #if (RECTANGLE_TEST==1)
 		start_time = GetTickCount64();
-		for (int test_count = 0; test_count < 1000000; test_count++)
+		for (int test_count = 0; test_count < TEST_COUNT; test_count++)
 #endif
 		{
 			// i. 범위 사각형 알고리즘
 			if ((point.x >= (t_1stRectangleTable[0][0]).x) && (point.x <= (t_1stRectangleTable[0][1]).x)
 				&& (point.y >= (t_1stRectangleTable[0][0]).y) && (point.y < (t_1stRectangleTable[4][2]).y))// 터치가 범위 안에 있을 경우
 			{
-#if (SEL_1ST_RECTANGLE==0)	// i-1. original 범위 사각형 알고리즘
+#if (SEL_RECTANGLE_ALGORITHM==0)	// i-1. original 범위 사각형 알고리즘
 				for (int i = 0; i < 5; i++)
 				{
 					if ((point.y >= (t_1stRectangleTable[i][0]).y) && (point.y < (t_1stRectangleTable[i][2]).y))
 					{
 						//SetDlgItemText(IDC_STATIC_VALUE, _T("i번 칸 터치"));
-						division = i;
-						display_text.Format(_T("idx=%d Inside"), division);
+						idxSelect = i;
+#if (RECTANGLE_TEST!=1)
+						display_text.Format(_T("idx=%d Inside"), idxSelect);
+#endif
 						break;
 					}
 				}
-#elif (SEL_1ST_RECTANGLE==1)
-				// ii. 사각형 다각형 알고리즘
-				is_in = FALSE; // 점이 다각형 안에 있는지?
 
-				// int iCrosses = 0; // 교차 횟수 
-				if ((point.x >= (t_1stRectangleTable[0][0]).x) && (point.x <= (t_1stRectangleTable[0][1]).x)
-					&& (point.y >= (t_1stRectangleTable[0][0]).y) && (point.y < (t_1stRectangleTable[4][2]).y))// 터치가 범위 안에 있을 경우
-				{
-					for (int n = 0; n < 5; n++) // 5개의 다각형이 있다.
-					{
-						iCrosses = 0;
-						for (int i = 0; i < 4; i++) // 사각형이다.
-						{
-							j = (i + 1) % 4; //점이 선분(t_1stRectangleTable[n][i] ~ t_1stRectangleTable[n][j])의 y좌표 사이에 있다.
-
-							// interSection는 점을 지나는 수평선과 선분(t_1stRectangleTable[n][i] ~ t_1stRectangleTable[n][j])의 교점 
-							if ((t_1stRectangleTable[n][i].y > point.y) != (t_1stRectangleTable[n][j].y > point.y)) // 선분을 이루는 두 점의 y좌표가 수평선을 중간에 둔다.
-							{
-								interSection =
-									(((float)(t_1stRectangleTable[n][j].x - t_1stRectangleTable[n][i].x) / (float)(t_1stRectangleTable[n][j].y - t_1stRectangleTable[n][i].y))
-										* (float)(point.y - t_1stRectangleTable[n][i].y)) // 기울기의 역수와 y좌표의 변화값을 곱하면 x좌표의 변화값이 나온다
-									+ (float)t_1stRectangleTable[n][i].x; //
-								if (point.x < interSection) iCrosses++; // interSection보다 x좌표가 왼쪽에 있으면 교점의 개수를 증가시킨다. 
-							}
-						}
-
-						// 홀수면 내부, 짝수면 외부에 있음 
-						if ((iCrosses & 0x01) == 1) // (iCrosses % 2) == 1
-						{
-							//bPointInPolygon = TRUE;
-							is_in = TRUE;
-							division = n;
-							display_text.Format(_T("idx=%d,cross=%d Inside"), division, iCrosses);
-							break;
-						}
-					}
-				}
-
-				if (is_in == FALSE)
-				{
-					display_text.Format(_T("Outside"));
-				}
-				// ii. 사각형 다각형 알고리즘 끝
-#else	// iii. optimized 범위 사각형 알고리즘
-				unsigned int idxSelect = (point.y - t_1stRectangleTable[0][0].y) / (t_1stRectangleTable[4][2].y - t_1stRectangleTable[3][2].y); // (최대 y좌표 - 현재 y좌표)/(사각형 한칸의 y좌표 범위)
+#else	// ii. optimized 범위 사각형 알고리즘
+				// (최대 y좌표 - 현재 y좌표)/(사각형 한칸의 y좌표 범위)
+				idxSelect = (point.y - t_1stRectangleTable[0][0].y) / (t_1stRectangleTable[4][2].y - t_1stRectangleTable[3][2].y);
+#if (RECTANGLE_TEST!=1)
 				display_text.Format(_T("idx=%d Inside"), idxSelect);
+#endif
 #if 0
 				switch (idxSelect)
 				{
@@ -779,7 +741,7 @@ void CTouchRecognizeDlg::CheckPointAndDisplay(CPoint point)
 		}
 #if (RECTANGLE_TEST==1)
 		end_time = GetTickCount64();
-		display_text.Format(_T("%d"), end_time - start_time);
+		display_text.Format(_T("idx : %u, %dms"), idxSelect, end_time - start_time);
 #endif
 
 		// DlgItemText 표시
@@ -791,7 +753,7 @@ void CTouchRecognizeDlg::CheckPointAndDisplay(CPoint point)
 
 #if (POLYGON_TEST==1)
 		start_time = GetTickCount64();
-		for (int test_count = 0; test_count < 1000000; test_count++)
+		for (int test_count = 0; test_count < TEST_COUNT; test_count++)
 #endif
 		{
 			is_in = FALSE; // 점이 다각형 안에 있는지?
@@ -885,7 +847,9 @@ void CTouchRecognizeDlg::CheckPointAndDisplay(CPoint point)
 						//bPointInPolygon = TRUE;
 						is_in = TRUE;
 						division = n;
+#if (POLYGON_TEST!=1)
 						display_text.Format(_T("idx=%d,cross=%d (%d,%d) Inside"), division, iCrosses, point.x, point.y);
+#endif
 						break;
 					}
 				}
@@ -898,7 +862,7 @@ void CTouchRecognizeDlg::CheckPointAndDisplay(CPoint point)
 		}
 #if (POLYGON_TEST==1)
 		end_time = GetTickCount64();
-		display_text.Format(_T("%d"), end_time - start_time);
+		display_text.Format(_T("idx : %d, %dms"), division, end_time - start_time);
 #endif
 
 		SetDlgItemText(IDC_STATIC_VALUE, display_text);
@@ -915,7 +879,7 @@ void CTouchRecognizeDlg::CheckPointAndDisplay(CPoint point)
 #endif
 		{
 			is_in = FALSE;
-#if (SEL_CIRCLE==0)
+#if (SEL_CIRCLE_ALGORITHM==0)
 			if ((((point.x >= ((t_2ndCircleTable[0]).center_x - (t_2ndCircleTable[0]).radius)) && (point.x < ((t_2ndCircleTable[0]).center_x + (t_2ndCircleTable[0]).radius)))
 				|| ((point.x >= ((t_2ndCircleTable[1]).center_x - (t_2ndCircleTable[1]).radius)) && (point.x < ((t_2ndCircleTable[1]).center_x + (t_2ndCircleTable[1]).radius)))
 				|| ((point.x >= ((t_2ndCircleTable[2]).center_x - (t_2ndCircleTable[2]).radius)) && (point.x < ((t_2ndCircleTable[2]).center_x + (t_2ndCircleTable[2]).radius))))
@@ -931,7 +895,9 @@ void CTouchRecognizeDlg::CheckPointAndDisplay(CPoint point)
 					{
 						//SetDlgItemText(IDC_STATIC_VALUE, _T("i번 칸 터치"));
 						division = i;
+#if(CIRCLE_TEST!=1)
 						display_text.Format(_T("idx=%d Inside"), division);
+#endif
 						is_in = TRUE;
 						break;
 					}
@@ -953,74 +919,51 @@ void CTouchRecognizeDlg::CheckPointAndDisplay(CPoint point)
 
 
 	case eAlgorithmType_3rdRectangle:
-		// i. 범위 사각형 알고리즘
-		if ((point.x >= (t_3rdRectangleTable[0][0]).x) && (point.x < (t_3rdRectangleTable[2][1]).x)
-			&& (point.y >= (t_3rdRectangleTable[0][0]).y) && (point.y < (t_3rdRectangleTable[0][2]).y))// 터치가 범위 안에 있을 경우
+
+#if (RECTANGLE_TEST==1)
+		start_time = GetTickCount64();
+		for (int test_count = 0; test_count < TEST_COUNT; test_count++)
+#endif
 		{
-#if (SEL_2ND_RECTANGLE==0)	// i-1. original 범위 사각형 알고리즘
-			for (int i = 0; i < 3; i++)
+			// i. 범위 사각형 알고리즘
+			if ((point.x >= (t_3rdRectangleTable[0][0]).x) && (point.x < (t_3rdRectangleTable[2][1]).x)
+				&& (point.y >= (t_3rdRectangleTable[0][0]).y) && (point.y < (t_3rdRectangleTable[0][2]).y))// 터치가 범위 안에 있을 경우
 			{
-				if ((point.x >= (t_3rdRectangleTable[i][0]).x) && (point.x < (t_3rdRectangleTable[i][1]).x))
+#if (SEL_RECTANGLE_ALGORITHM==0)	// i-1. original 범위 사각형 알고리즘
+				for (int i = 0; i < 3; i++)
 				{
-					//SetDlgItemText(IDC_STATIC_VALUE, _T("i번 칸 터치"));
-					division = i;
-					display_text.Format(_T("idx=%d Inside"), division);
-					break;
-				}
-			}
-#elif (SEL_2ND_RECTANGLE==1)
-			// ii. 사각형 다각형 알고리즘
-			is_in = FALSE; // 점이 다각형 안에 있는지?
-
-			// int iCrosses = 0; // 교차 횟수 
-			for (int n = 0; n < 3; n++) // 3개의 다각형이 있다.
-			{
-				iCrosses = 0;
-				for (int i = 0; i < 4; i++) // 사각형이다.
-				{
-					j = (i + 1) % 4; //점이 선분(t_3rdRectangleTable[n][i] ~ t_3rdRectangleTable[n][j])의 y좌표 사이에 있다.
-
-					// interSection는 점을 지나는 수평선과 선분(t_1stRectangleTable[n][i] ~ t_1stRectangleTable[n][j])의 교점 
-					if ((t_3rdRectangleTable[n][i].y > point.y) != (t_3rdRectangleTable[n][j].y > point.y)) // 선분을 이루는 두 점의 y좌표가 수평선을 중간에 둔다.
+					if ((point.x >= (t_3rdRectangleTable[i][0]).x) && (point.x < (t_3rdRectangleTable[i][1]).x))
 					{
-						interSection =
-							(((float)(t_3rdRectangleTable[n][j].x - t_3rdRectangleTable[n][i].x) / (float)(t_3rdRectangleTable[n][j].y - t_3rdRectangleTable[n][i].y))
-								* (float)(point.y - t_3rdRectangleTable[n][i].y)) // 기울기의 역수와 y좌표의 변화값을 곱하면 x좌표의 변화값이 나온다
-							+ (float)t_3rdRectangleTable[n][i].x; //
-						if (point.x < interSection) iCrosses++; // interSection보다 x좌표가 왼쪽에 있으면 교점의 개수를 증가시킨다. 
+						//SetDlgItemText(IDC_STATIC_VALUE, _T("i번 칸 터치"));
+						division = i;
+#if (RECTANGLE_TEST!=1)
+						display_text.Format(_T("idx=%d Inside"), division);
+#endif
+						break;
 					}
 				}
 
-				// 홀수면 내부, 짝수면 외부에 있음 
-				if ((iCrosses & 0x01) == 1) // (iCrosses % 2) == 1
-				{
-					//bPointInPolygon = TRUE;
-					is_in = TRUE;
-					division = n;
-					display_text.Format(_T("idx=%d,cross=%d Inside"), division, iCrosses);
-					break;
-				}
+#else	// ii. optimized 범위 사각형 알고리즘
+				idxSelect = (point.x - t_3rdRectangleTable[0][0].x) / (t_3rdRectangleTable[1][0].x - t_3rdRectangleTable[0][0].x); // (최대 x좌표 - 현재 x좌표)/(사각형 한칸의 x좌표 범위)
+#if (RECTANGLE_TEST!=1)
+				display_text.Format(_T("idx=%d Inside"), idxSelect);
+#endif
+#endif
 			}
-
-			if (is_in == FALSE)
+			else// 터치가 범위 안에 없을 경우
 			{
 				display_text.Format(_T("Outside"));
 			}
-			// ii. 사각형 다각형 알고리즘 끝
-
-#else	// iii. optimized 범위 사각형 알고리즘
-			idxSelect = (point.x - t_3rdRectangleTable[0][0].x) / (t_3rdRectangleTable[0][0].x - t_3rdRectangleTable[1][0].x); // (최대 x좌표 - 현재 x좌표)/(사각형 한칸의 x좌표 범위)
-			display_text.Format(_T("idx=%d Inside"), idxSelect);
+			// 범위 사각형 알고리즘 끝
+		}
+#if (RECTANGLE_TEST==1)
+		end_time = GetTickCount64();
+		display_text.Format(_T("idx : %d, %dms"), idxSelect, end_time - start_time);
 #endif
-		}
-		else// 터치가 범위 안에 없을 경우
-		{
-			display_text.Format(_T("Outside"));
-		}
-		// 범위 사각형 알고리즘 끝
 
 		SetDlgItemText(IDC_STATIC_VALUE, display_text);
 		break;
+
 
 
 	case eAlgorithmType_3rd6pPolygon:
@@ -1111,7 +1054,9 @@ void CTouchRecognizeDlg::CheckPointAndDisplay(CPoint point)
 					//bPointInPolygon = TRUE;
 					is_in = TRUE;
 					division = n;
-					display_text.Format(_T("idx=%d,cross=%d Inside"), division, iCrosses);
+#if (POLYGON_TEST!=1)
+					display_text.Format(_T("idx=%d, cross=%d Inside"), division, iCrosses);
+#endif
 					break;
 				}
 			}
@@ -1128,104 +1073,114 @@ void CTouchRecognizeDlg::CheckPointAndDisplay(CPoint point)
 
 
 	case eAlgorithmType_3rd5pPolygon:
-
-#if 1
-		is_in = FALSE; // 점이 다각형 안에 있는지?
-
-	// int iCrosses = 0; // 교차 횟수 
-#if (SEL_POLYGON_RANGE==1)
-		if (((t_3rdPolygon6p2ndTable[0][1].y <= point.y) && (t_3rdPolygon6p2ndTable[1][3].y >= point.y))
-			&& ((t_3rdPolygon6p2ndTable[0][0].x <= point.x) && (t_3rdPolygon6p2ndTable[2][3].x >= point.x)))
+#if (POLYGON_TEST==1)
+		start_time = GetTickCount64();
+		for (int test_count = 0; test_count < TEST_COUNT; test_count++)
 #endif
 		{
-			for (int n = 0; n < 3; n++) // 3개의 다각형이 있다.
+
+			is_in = FALSE; // 점이 다각형 안에 있는지?
+
+		// int iCrosses = 0; // 교차 횟수 
+#if (SEL_POLYGON_RANGE==1)
+			if (((t_3rdPolygon6p2ndTable[0][1].y <= point.y) && (t_3rdPolygon6p2ndTable[1][3].y >= point.y))
+				&& ((t_3rdPolygon6p2ndTable[0][0].x <= point.x) && (t_3rdPolygon6p2ndTable[2][3].x >= point.x)))
+#endif
 			{
-				iCrosses = 0;
-				for (int i = 0; i < 6; i++) // 육각형이다.
+				for (int n = 0; n < 3; n++) // 3개의 다각형이 있다.
 				{
-					j = (i + 1) % 6; //점이 선분의 y좌표 사이에 있다.
+					iCrosses = 0;
+					for (int i = 0; i < 6; i++) // 육각형이다.
+					{
+						j = (i + 1) % 6; //점이 선분의 y좌표 사이에 있다.
 
 #if (SEL_POLYGON_ALGORITHM==2)
 //    isLeft: >0 for P2  선분 왼쪽
 //            =0 for P2  선분 위
 //            <0 for P2  선분 오른쪽
-					if (t_3rdPolygon6p2ndTable[n][i].y <= point.y)
-					{
-						if (t_3rdPolygon6p2ndTable[n][j].y > point.y)
+						if (t_3rdPolygon6p2ndTable[n][i].y <= point.y)
 						{
-							if (isLeft(t_3rdPolygon6p2ndTable[n][i], t_3rdPolygon6p2ndTable[n][j], point) > 0)
+							if (t_3rdPolygon6p2ndTable[n][j].y > point.y)
 							{
-								iCrosses++;
-							}
-						}
-					}
-					else
-					{
-						if (t_3rdPolygon6p2ndTable[n][j].y <= point.y)
-						{
-							if (isLeft(t_3rdPolygon6p2ndTable[n][i], t_3rdPolygon6p2ndTable[n][j], point) < 0)
-							{
-								iCrosses--;
-							}
-						}
-					}
-#endif
-
-					// interSection는 점을 지나는 수평선과 선분의 교점 
-#if (SEL_POLYGON_ALGORITHM==0||SEL_POLYGON_ALGORITHM==1)
-					if ((t_3rdPolygon6p2ndTable[n][i].y > point.y) != (t_3rdPolygon6p2ndTable[n][j].y > point.y)) // 선분을 이루는 두 점의 y좌표가 수평선을 중간에 둔다.
-#endif
-					{
-#if (SEL_POLYGON_ALGORITHM==0)
-						interSection =
-							(((float)(t_3rdPolygon6p2ndTable[n][j].x - t_3rdPolygon6p2ndTable[n][i].x) / (float)(t_3rdPolygon6p2ndTable[n][j].y - t_3rdPolygon6p2ndTable[n][i].y))
-								* (float)(point.y - t_3rdPolygon6p2ndTable[n][i].y)) // 기울기의 역수와 y좌표의 변화값을 곱하면 x좌표의 변화값이 나온다
-							+ (float)t_3rdPolygon6p2ndTable[n][i].x; //
-						if (point.x < interSection) iCrosses++; // interSection보다 x좌표가 왼쪽에 있으면 교점의 개수를 증가시킨다. 
-
-#elif (SEL_POLYGON_ALGORITHM==1)
-						optInterSection =
-							(t_3rdPolygon6p2ndTable[n][j].x - t_3rdPolygon6p2ndTable[n][i].x) * (point.y - t_3rdPolygon6p2ndTable[n][i].y);
-
-						presentX = (point.x - t_3rdPolygon6p2ndTable[n][i].x) * (t_3rdPolygon6p2ndTable[n][j].y - t_3rdPolygon6p2ndTable[n][i].y);
-
-						// 양수 음수 판별 최적화
-
-						if ((t_3rdPolygon6p2ndTable[n][j].y - t_3rdPolygon6p2ndTable[n][i].y) < 0)
-						{
-							if (presentX > optInterSection)
-							{
-								iCrosses++;
+								if (isLeft(t_3rdPolygon6p2ndTable[n][i], t_3rdPolygon6p2ndTable[n][j], point) > 0)
+								{
+									iCrosses++;
+								}
 							}
 						}
 						else
 						{
-							if (presentX < optInterSection)
+							if (t_3rdPolygon6p2ndTable[n][j].y <= point.y)
 							{
-								iCrosses++;
-							}// interSection보다 x좌표가 왼쪽에 있으면 교점의 개수를 증가시킨다. 
+								if (isLeft(t_3rdPolygon6p2ndTable[n][i], t_3rdPolygon6p2ndTable[n][j], point) < 0)
+								{
+									iCrosses--;
+								}
+							}
 						}
 #endif
+
+						// interSection는 점을 지나는 수평선과 선분의 교점 
+#if (SEL_POLYGON_ALGORITHM==0||SEL_POLYGON_ALGORITHM==1)
+						if ((t_3rdPolygon6p2ndTable[n][i].y > point.y) != (t_3rdPolygon6p2ndTable[n][j].y > point.y)) // 선분을 이루는 두 점의 y좌표가 수평선을 중간에 둔다.
+#endif
+						{
+#if (SEL_POLYGON_ALGORITHM==0)
+							interSection =
+								(((float)(t_3rdPolygon6p2ndTable[n][j].x - t_3rdPolygon6p2ndTable[n][i].x) / (float)(t_3rdPolygon6p2ndTable[n][j].y - t_3rdPolygon6p2ndTable[n][i].y))
+									* (float)(point.y - t_3rdPolygon6p2ndTable[n][i].y)) // 기울기의 역수와 y좌표의 변화값을 곱하면 x좌표의 변화값이 나온다
+								+ (float)t_3rdPolygon6p2ndTable[n][i].x; //
+							if (point.x < interSection) iCrosses++; // interSection보다 x좌표가 왼쪽에 있으면 교점의 개수를 증가시킨다. 
+
+#elif (SEL_POLYGON_ALGORITHM==1)
+							optInterSection =
+								(t_3rdPolygon6p2ndTable[n][j].x - t_3rdPolygon6p2ndTable[n][i].x) * (point.y - t_3rdPolygon6p2ndTable[n][i].y);
+
+							presentX = (point.x - t_3rdPolygon6p2ndTable[n][i].x) * (t_3rdPolygon6p2ndTable[n][j].y - t_3rdPolygon6p2ndTable[n][i].y);
+
+							// 양수 음수 판별 최적화
+
+							if ((t_3rdPolygon6p2ndTable[n][j].y - t_3rdPolygon6p2ndTable[n][i].y) < 0)
+							{
+								if (presentX > optInterSection)
+								{
+									iCrosses++;
+								}
+							}
+							else
+							{
+								if (presentX < optInterSection)
+								{
+									iCrosses++;
+								}// interSection보다 x좌표가 왼쪽에 있으면 교점의 개수를 증가시킨다. 
+							}
+#endif
+						}
+					}
+
+					// 홀수면 내부, 짝수면 외부에 있음 
+					if ((iCrosses & 0x01) == 1) // (iCrosses % 2) == 1
+					{
+						//bPointInPolygon = TRUE;
+						is_in = TRUE;
+						division = n;
+#if (POLYGON_TEST!=1)
+						display_text.Format(_T("idx=%d,cross=%d Inside"), division, iCrosses);
+#endif
+						break;
 					}
 				}
+			}
 
-				// 홀수면 내부, 짝수면 외부에 있음 
-				if ((iCrosses & 0x01) == 1) // (iCrosses % 2) == 1
-				{
-					//bPointInPolygon = TRUE;
-					is_in = TRUE;
-					division = n;
-					display_text.Format(_T("idx=%d,cross=%d Inside"), division, iCrosses);
-					break;
-				}
+
+			if (is_in == FALSE)
+			{
+				display_text.Format(_T("cross=%d Outside"), iCrosses);
 			}
 		}
-
-
-		if (is_in == FALSE)
-		{
-			display_text.Format(_T("cross=%d Outside"), iCrosses);
-		}
+#if (POLYGON_TEST==1)
+		end_time = GetTickCount64();
+		display_text.Format(_T("idx = %d, %dms"), division, end_time - start_time);
 #endif
 		SetDlgItemText(IDC_STATIC_VALUE, display_text);
 		break;
