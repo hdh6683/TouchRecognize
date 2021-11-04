@@ -11,9 +11,9 @@
 #define new DEBUG_NEW
 #define SEL_CIRCLE_ALGORITHM	1
 #define SEL_RECTANGLE_ALGORITHM	1
-#define SEL_POLYGON_RANGE	1
+#define SEL_POLYGON_RANGE	0
 #define SEL_POLYGON_ALGORITHM 1
-#define SEL_CYCLE_ALGORITHM	6	// 0 ~ 6번 알고리즘이 존재한다
+#define SEL_CYCLE_ALGORITHM	5 	// 0 ~ 6번 알고리즘이 존재한다
 
 #define PI 3.141592653589f
 
@@ -21,7 +21,8 @@
 #define CIRCLE_TEST 0
 #define RECTANGLE_TEST 0
 #define POLYGON_TEST 0
-#define CYCLE_TEST 0
+#define CYCLE_TEST 1
+#define SEL_DIVIDE 0
 #define ABS_IS_LEFT 0
 
 // compare 구현
@@ -647,9 +648,6 @@ void CTouchRecognizeDlg::OnCbnSelchangeAlgorithmCombo()
 
 inline int CTouchRecognizeDlg::isLeft(CPoint P0, CPoint P1, CPoint P2)
 {
-	//int result = 0;
-	// To-Do
-	// D = ((X2-X1)*(Y2-b))-((X2-a)*(Y2-Y1))
 #if (ABS_IS_LEFT==0)
 	return ((P1.x - P0.x) * (P2.y - P0.y) - (P2.x - P0.x) * (P1.y - P0.y));
 	//return result;
@@ -662,7 +660,6 @@ inline int CTouchRecognizeDlg::isLeft(CPoint P0, CPoint P1, CPoint P2)
 void CTouchRecognizeDlg::CheckPointAndDisplay(CPoint point)
 {
 	CString display_text;
-	int division;
 	BOOL is_in;
 	float interSection;
 	int presentX;
@@ -710,24 +707,24 @@ void CTouchRecognizeDlg::CheckPointAndDisplay(CPoint point)
 				switch (idxSelect)
 				{
 				case 0:
-					division = 4;
+					idxSelect = 4;
 
 					break;
 				case 1:
-					division = 3;
-					display_text.Format(_T("idx=%d Inside"), division);
+					idxSelect = 3;
+					display_text.Format(_T("idx=%d Inside"), idxSelect);
 					break;
 				case 2:
-					division = 2;
-					display_text.Format(_T("idx=%d Inside"), division);
+					idxSelect = 2;
+					display_text.Format(_T("idx=%d Inside"), idxSelect);
 					break;
 				case 3:
-					division = 1;
-					display_text.Format(_T("idx=%d Inside"), division);
+					idxSelect = 1;
+					display_text.Format(_T("idx=%d Inside"), idxSelect);
 					break;
 				case 4:
-					division = 0;
-					display_text.Format(_T("idx=%d Inside"), division);
+					idxSelect = 0;
+					display_text.Format(_T("idx=%d Inside"), idxSelect);
 					break;
 				}
 #endif
@@ -770,7 +767,8 @@ void CTouchRecognizeDlg::CheckPointAndDisplay(CPoint point)
 					iCrosses = 0;
 					for (int i = 0; i < 6; i++) // 육각형이다.
 					{
-						j = (i + 1) % 6; //점이 선분(t_2ndPolygon6pTable[n][i] ~ t_2ndPolygon6pTable[n][j])의 y좌표 사이에 있다.
+						j = (i + 1) % 6; 
+						//점이 선분(t_2ndPolygon6pTable[n][i] ~ t_2ndPolygon6pTable[n][j])의 y좌표 사이에 있다.
 #if (SEL_POLYGON_ALGORITHM==2)
 //    isLeft: >0 for P2  선분 왼쪽
 //            =0 for P2  선분 위
@@ -808,13 +806,22 @@ void CTouchRecognizeDlg::CheckPointAndDisplay(CPoint point)
 								+ (float)t_2ndPolygon6pTable[n][i].x; //
 							if (point.x < interSection) iCrosses++; // interSection보다 x좌표가 왼쪽에 있으면 교점의 개수를 증가시킨다. 
 #elif (SEL_POLYGON_ALGORITHM==1)
+#if (SEL_DIVIDE==0)
 							optInterSection =
 								(t_2ndPolygon6pTable[n][j].x - t_2ndPolygon6pTable[n][i].x) * (point.y - t_2ndPolygon6pTable[n][i].y);
 
 							presentX = (point.x - t_2ndPolygon6pTable[n][i].x) * (t_2ndPolygon6pTable[n][j].y - t_2ndPolygon6pTable[n][i].y);
 
+#else
+							optInterSection =
+								(t_2ndPolygon6pTable[n][j].x - t_2ndPolygon6pTable[n][i].x) * (point.y - t_2ndPolygon6pTable[n][i].y)
+								/ (t_2ndPolygon6pTable[n][j].y - t_2ndPolygon6pTable[n][i].y);
+
+							presentX = (point.x - t_2ndPolygon6pTable[n][i].x);
+#endif
+
 							// 양수 음수 판별 최적화
-#if 1
+#if (SEL_DIVIDE==0)
 							if ((t_2ndPolygon6pTable[n][j].y - t_2ndPolygon6pTable[n][i].y) < 0)
 							{
 								if (presentX > optInterSection)
@@ -827,7 +834,7 @@ void CTouchRecognizeDlg::CheckPointAndDisplay(CPoint point)
 								if (presentX < optInterSection)
 								{
 									iCrosses++;
-								}// interSection보다 x좌표가 왼쪽에 있으면 교점의 개수를 증가시킨다. 
+								}
 							}
 #else
 							if (presentX < optInterSection)
@@ -846,9 +853,9 @@ void CTouchRecognizeDlg::CheckPointAndDisplay(CPoint point)
 					{
 						//bPointInPolygon = TRUE;
 						is_in = TRUE;
-						division = n;
+						idxSelect = n;
 #if (POLYGON_TEST!=1)
-						display_text.Format(_T("idx=%d,cross=%d (%d,%d) Inside"), division, iCrosses, point.x, point.y);
+						display_text.Format(_T("idx=%d,cross=%d (%d,%d) Inside"), idxSelect, iCrosses, point.x, point.y);
 #endif
 						break;
 					}
@@ -862,7 +869,7 @@ void CTouchRecognizeDlg::CheckPointAndDisplay(CPoint point)
 		}
 #if (POLYGON_TEST==1)
 		end_time = GetTickCount64();
-		display_text.Format(_T("idx : %d, %dms"), division, end_time - start_time);
+		display_text.Format(_T("idx : %d, %dms"), idxSelect, end_time - start_time);
 #endif
 
 		SetDlgItemText(IDC_STATIC_VALUE, display_text);
@@ -875,16 +882,14 @@ void CTouchRecognizeDlg::CheckPointAndDisplay(CPoint point)
 
 #if (CIRCLE_TEST==1)
 		start_time = GetTickCount64();
-		for (int test_count = 0; test_count < 1000000; test_count++)
+		for (int test_count = 0; test_count < TEST_COUNT; test_count++)
 #endif
 		{
 			is_in = FALSE;
 #if (SEL_CIRCLE_ALGORITHM==0)
-			if ((((point.x >= ((t_2ndCircleTable[0]).center_x - (t_2ndCircleTable[0]).radius)) && (point.x < ((t_2ndCircleTable[0]).center_x + (t_2ndCircleTable[0]).radius)))
-				|| ((point.x >= ((t_2ndCircleTable[1]).center_x - (t_2ndCircleTable[1]).radius)) && (point.x < ((t_2ndCircleTable[1]).center_x + (t_2ndCircleTable[1]).radius)))
-				|| ((point.x >= ((t_2ndCircleTable[2]).center_x - (t_2ndCircleTable[2]).radius)) && (point.x < ((t_2ndCircleTable[2]).center_x + (t_2ndCircleTable[2]).radius))))
-				&& ((point.y >= ((t_2ndCircleTable[0]).center_y - (t_2ndCircleTable[2]).radius)) && (point.y < ((t_2ndCircleTable[0]).center_y + (t_2ndCircleTable[2]).radius)))
-				)// 터치가 사각형 범위 안에 있을 경우
+			if (((point.x >= (158-112)) && (point.x < (158+112)))
+				|| ((point.x >= (686 - 122)) && (point.x < (686+122))) 
+				|| ((point.x >= (1214 - 127)) && (point.x < (1214+127))))// 터치가 원의 x좌표 범위 안에 있을 경우
 #endif
 			{
 				for (int i = 0; i < 3; i++) // 사각형 범위 안에 터치한 점들 중에 원 안에 있는 점인지 판별한다.
@@ -894,9 +899,9 @@ void CTouchRecognizeDlg::CheckPointAndDisplay(CPoint point)
 					if (C2 < (t_2ndCircleTable[i].radius * t_2ndCircleTable[i].radius)) // C²이 r²보다 작으면 원 안에 있다.
 					{
 						//SetDlgItemText(IDC_STATIC_VALUE, _T("i번 칸 터치"));
-						division = i;
+						idxSelect = i;
 #if(CIRCLE_TEST!=1)
-						display_text.Format(_T("idx=%d Inside"), division);
+						display_text.Format(_T("idx = %d Inside"), idxSelect);
 #endif
 						is_in = TRUE;
 						break;
@@ -906,13 +911,13 @@ void CTouchRecognizeDlg::CheckPointAndDisplay(CPoint point)
 		}
 		// 시간 측정
 
-		if (is_in != TRUE) // 터치가 원의 범위 안에 정확하게 없을 경우
-		{
-			display_text.Format(_T("Outside"));
-		}
+		//if (is_in != TRUE) // 터치가 원의 범위 안에 정확하게 없을 경우
+		//{
+		//	display_text.Format(_T("Outside"));
+		//}
 #if (CIRCLE_TEST==1)
 		end_time = GetTickCount64();
-		display_text.Format(_T("%d"), end_time - start_time);
+		display_text.Format(_T("%dms") /*idxSelect*/, end_time - start_time);
 #endif
 		SetDlgItemText(IDC_STATIC_VALUE, display_text);
 		break;
@@ -935,9 +940,9 @@ void CTouchRecognizeDlg::CheckPointAndDisplay(CPoint point)
 					if ((point.x >= (t_3rdRectangleTable[i][0]).x) && (point.x < (t_3rdRectangleTable[i][1]).x))
 					{
 						//SetDlgItemText(IDC_STATIC_VALUE, _T("i번 칸 터치"));
-						division = i;
+						idxSelect = i;
 #if (RECTANGLE_TEST!=1)
-						display_text.Format(_T("idx=%d Inside"), division);
+						display_text.Format(_T("idx=%d Inside"), idxSelect);
 #endif
 						break;
 					}
@@ -1053,9 +1058,9 @@ void CTouchRecognizeDlg::CheckPointAndDisplay(CPoint point)
 				{
 					//bPointInPolygon = TRUE;
 					is_in = TRUE;
-					division = n;
+					idxSelect = n;
 #if (POLYGON_TEST!=1)
-					display_text.Format(_T("idx=%d, cross=%d Inside"), division, iCrosses);
+					display_text.Format(_T("idx=%d, cross=%d Inside"), idxSelect, iCrosses);
 #endif
 					break;
 				}
@@ -1163,9 +1168,9 @@ void CTouchRecognizeDlg::CheckPointAndDisplay(CPoint point)
 					{
 						//bPointInPolygon = TRUE;
 						is_in = TRUE;
-						division = n;
+						idxSelect = n;
 #if (POLYGON_TEST!=1)
-						display_text.Format(_T("idx=%d,cross=%d Inside"), division, iCrosses);
+						display_text.Format(_T("idx=%d,cross=%d Inside"), idxSelect, iCrosses);
 #endif
 						break;
 					}
@@ -1180,7 +1185,7 @@ void CTouchRecognizeDlg::CheckPointAndDisplay(CPoint point)
 		}
 #if (POLYGON_TEST==1)
 		end_time = GetTickCount64();
-		display_text.Format(_T("idx = %d, %dms"), division, end_time - start_time);
+		display_text.Format(_T("idx = %d, %dms"), idxSelect, end_time - start_time);
 #endif
 		SetDlgItemText(IDC_STATIC_VALUE, display_text);
 		break;
@@ -1237,13 +1242,6 @@ void CTouchRecognizeDlg::CheckPointAndDisplay(CPoint point)
 				//	degree = (int)(180 / PI * radian); // (180/PI)*라디안 = 각도
 				degree = 57.2957795f * radian;
 
-				//	180 / PI는 57.2957795
-
-				//if (degree >= 0)
-				//{
-				//	areaSelect = 0.1f * degree + 9;	// (180 / PI * radian) / 10 + 9 
-				//}
-				//else
 				if (degree >= -90)
 				{
 					areaSelect = 0.1f * degree + 9;	// (180 / PI * radian) / 10 + 9
