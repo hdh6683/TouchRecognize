@@ -13,7 +13,7 @@
 #define SEL_RECTANGLE_ALGORITHM	1
 #define SEL_POLYGON_RANGE	0
 #define SEL_POLYGON_ALGORITHM 1
-#define SEL_CYCLE_ALGORITHM	5 	// 0 ~ 6번 알고리즘이 존재한다
+#define SEL_CYCLE_ALGORITHM	6 	// 0 ~ 7번 알고리즘이 존재한다
 
 #define PI 3.141592653589f
 
@@ -21,7 +21,7 @@
 #define CIRCLE_TEST 0
 #define RECTANGLE_TEST 0
 #define POLYGON_TEST 0
-#define CYCLE_TEST 1
+#define CYCLE_TEST 0
 #define SEL_DIVIDE 0
 #define ABS_IS_LEFT 0
 
@@ -46,6 +46,10 @@ const int t_SortedIntegerSlopeTable100[10] = { // 100배 정수값 사이클 기울기 테�
 
 const int t_IntegerSlopeTable1000[10] = { // 1000배 정수값 사이클 기울기 테이블
 	400000,5671,2747,1732,1192,839,577,364,176,0
+};
+
+int t_BinaryResultTable[733][733] = {
+
 };
 
 //const s_Polygon6pData  t_3rdPolygon6p1stTable[eDivisonState6][6] =
@@ -447,6 +451,77 @@ CTouchRecognizeDlg::CTouchRecognizeDlg(CWnd* pParent /*=nullptr*/)
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 	m_rect.SetRect(50, 50, 100, 100);
 	//m_rect.SetRect(10, 10, 3200, 2000);
+
+#if (SEL_CYCLE_ALGORITHM==7)
+	unsigned int start_init_time;
+	unsigned int end_init_time;
+
+	start_init_time = GetTickCount64();
+
+	// 이진 탐색 알고리즘 테이블 초기화
+	int x, y, M, C2;
+	float m;
+
+	for (y = 158; y <= 890; y++) // 사이클의 y 좌표는 158 ~ 890
+	{
+		for (x = 320; x <= 1052; x++) // 사이클의 x 좌표는 320 ~ 1052
+		{
+			C2 = ((x - t_1rdCycleAlgorithm[0].center_x) * (x - t_1rdCycleAlgorithm[0].center_x))
+				+ ((y - t_1rdCycleAlgorithm[0].center_y) * (y - t_1rdCycleAlgorithm[0].center_y)); // C² = A² + B²
+
+
+			if ((C2 <= (t_1rdCycleAlgorithm[0].radius * t_1rdCycleAlgorithm[0].radius))
+				&& (C2 >= (t_1rdCycleAlgorithm[1].radius * t_1rdCycleAlgorithm[1].radius))) // r² < C² < R²이면 원 안에 있다.
+			{
+				// 이진 탐색 기법 사용
+				m = (float)(t_1rdCycleAlgorithm[0].center_y - y) / (float)(x - t_1rdCycleAlgorithm[0].center_x);
+				M = m * 100;
+
+				if (x > t_1rdCycleAlgorithm[0].center_x)
+				{
+					if (y <= t_1rdCycleAlgorithm[0].center_y)
+					{
+						//1사분면, 그냥 그대로
+						//areaSelect = binsearch(M, 0, 9);
+						t_BinaryResultTable[x - 320][y - 158] = binsearch(M, 0, 9);
+					}
+					else
+					{
+						//4사분면
+						//areaSelect = minus_binsearch(-M, 0, 9) + 9;
+						t_BinaryResultTable[x - 320][y - 158] = minus_binsearch(-M, 0, 9) + 9;
+					}
+				}
+				else
+				{
+					if (y <= t_1rdCycleAlgorithm[0].center_y)
+					{
+						//2사분면
+						//areaSelect = minus_binsearch(-M, 0, 9) + 27;
+						t_BinaryResultTable[x - 320][y - 158] = minus_binsearch(-M, 0, 9) + 27;
+					}
+					else
+					{
+						//3사분면
+						//areaSelect = binsearch(M, 0, 9) + 18;
+						t_BinaryResultTable[x - 320][y - 158] = binsearch(M, 0, 9) + 18;
+					}
+				}
+			}
+			else
+			{
+				t_BinaryResultTable[x - 320][y - 158] = -1;
+			}
+		}
+	}
+	end_init_time = GetTickCount64();
+	//display_text.Format(_T("이진 탐색 알고리즘 테이블 초기화 끝!\n경과시간 : %dms"), end_init_time - start_init_time);
+	//SetDlgItemText(IDC_STATIC_VALUE, display_text);
+	// 이진 탐색 알고리즘 테이블 초기화 끝
+	init_time = end_init_time - start_init_time;
+
+#endif
+
 }
 
 void CTouchRecognizeDlg::DoDataExchange(CDataExchange* pDX)
@@ -1202,6 +1277,7 @@ void CTouchRecognizeDlg::CheckPointAndDisplay(CPoint point)
 		int divisor; // 기울기 알고리즘에서 나눗셈 하지 않기 위함
 		const int* t_SlopeTable;
 
+
 #if (CYCLE_TEST==1)
 		start_time = GetTickCount64();
 		for (int test_count = 0; test_count < TEST_COUNT; test_count++)
@@ -1549,9 +1625,12 @@ void CTouchRecognizeDlg::CheckPointAndDisplay(CPoint point)
 #elif (SEL_CYCLE_ALGORITHM==6)
 // 이진 탐색 기법 사용
 				m = (float)(t_1rdCycleAlgorithm[0].center_y - point.y) / (float)(point.x - t_1rdCycleAlgorithm[0].center_x);
+
+
 				M = m * 100;
 
-				if (point.x >= t_1rdCycleAlgorithm[0].center_x)
+
+				if (point.x > t_1rdCycleAlgorithm[0].center_x)
 				{
 					if (point.y <= t_1rdCycleAlgorithm[0].center_y)
 					{
@@ -1580,6 +1659,27 @@ void CTouchRecognizeDlg::CheckPointAndDisplay(CPoint point)
 #if (CYCLE_TEST!=1)
 				display_text.Format(_T("Inside, M : %d, idx : %d, (%d,%d)"), M, areaSelect, point.x, point.y);
 #endif
+#elif (SEL_CYCLE_ALGORITHM==7)
+				/*if ((point.x >= t_1rdCycleAlgorithm[0].center_x- t_1rdCycleAlgorithm[0].radius) 
+					&& (point.x <= t_1rdCycleAlgorithm[0].center_x + t_1rdCycleAlgorithm[0].radius) 
+					&& (point.y >= t_1rdCycleAlgorithm[0].center_y - t_1rdCycleAlgorithm[0].radius) 
+					&& (point.y <= t_1rdCycleAlgorithm[0].center_y - t_1rdCycleAlgorithm[0].radius))
+				*/
+				areaSelect = t_BinaryResultTable[point.x - 320][point.y - 158];
+				if (areaSelect == -1)
+				{
+#if (CYCLE_TEST!=1)
+					display_text.Format(_T("Outside"));
+#endif
+				}
+				else
+				{
+#if (CYCLE_TEST!=1)
+					display_text.Format(_T("Inside, init time : %dms, idx : %d, (%d,%d)"), init_time, areaSelect, point.x, point.y);
+#endif
+				}
+				
+
 #endif
 			}
 			else
@@ -1617,7 +1717,7 @@ int minus_binsearch(int searchnum, int left, int right) // t_SortedIntTable100 �
 			left = middle + 1;
 		}
 	}
-	return -1;
+	return 8; // INT_MIN 인덱스 처리
 }
 
 int binsearch(int searchnum, int left, int right) // t_SortedIntTable100 안에서 도는 이진 검색 함수

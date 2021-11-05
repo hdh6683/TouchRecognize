@@ -484,7 +484,7 @@ private:
 	// 생성입니다.
 public:
 	CTouchRecognizeDlg(CWnd* pParent = nullptr);
-
+	unsigned int init_time;
 #ifdef AFX_DESIGN_TIME
 	enum { IDD = IDD_TOUCHRECOGNIZE_DIALOG };
 #endif
