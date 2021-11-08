@@ -13,7 +13,7 @@
 #define SEL_RECTANGLE_ALGORITHM	1
 #define SEL_POLYGON_RANGE	0
 #define SEL_POLYGON_ALGORITHM 1
-#define SEL_CYCLE_ALGORITHM	6 	// 0 ~ 7번 알고리즘이 존재한다
+#define SEL_CYCLE_ALGORITHM	8 	// 0 ~ 7번 알고리즘이 존재한다
 
 #define PI 3.141592653589f
 
@@ -30,7 +30,35 @@ inline int compare(int middle, int searchnum);
 inline int minus_compare(int middle, int searchnum);
 int binsearch(int searchnum, int left, int right);
 int minus_binsearch(int searchnum, int left, int right);
+node* insert(node* root, int data);
+
 #endif
+
+typedef struct node { 
+	int data; 
+	struct node* left; 
+	struct node* right; 
+}node;
+
+node* slopeTree;
+
+node* insert(node* root, int data)
+{
+	if (root == NULL)
+	{
+		root = (node*)malloc(sizeof(node));
+		root->right = root->left = NULL;
+		root->data = data;
+		return root;
+	}
+	else
+	{
+		if (data < root->data)
+			root->left = insert(root->left, data);
+		else
+			root->right = insert(root->right, data);
+	} return root;
+}
 
 const float t_CycleSlopeTable[10] = { // 사이클 기울기 테이블
 	INFINITY,5.67128f,2.74748f,1.73205f,1.19175f,0.8391f,0.57735f,0.36397f,0.176327f,0
@@ -48,9 +76,11 @@ const int t_IntegerSlopeTable1000[10] = { // 1000배 정수값 사이클 기울기 테이블
 	400000,5671,2747,1732,1192,839,577,364,176,0
 };
 
-int t_BinaryResultTable[733][733] = {
-
+const int t_BinaryOrderTable[9][4] = {
+	{4,1,0,-1}, {4,1,-1}, {4,1,2,-1}, {4,1,2,3}, {4,-1}, {4,7,5,-1}, {4,7,5,6}, {4,7,-1},{4,7,8,-1}
 };
+
+int t_BinaryResultTable[733][733];
 
 //const s_Polygon6pData  t_3rdPolygon6p1stTable[eDivisonState6][6] =
 const CPoint  t_1stRectangleTable[eDivisonState6][4] = {	//	[5][4] 배열
@@ -466,12 +496,13 @@ CTouchRecognizeDlg::CTouchRecognizeDlg(CWnd* pParent /*=nullptr*/)
 	{
 		for (x = 320; x <= 1052; x++) // 사이클의 x 좌표는 320 ~ 1052
 		{
+#if 1
 			C2 = ((x - t_1rdCycleAlgorithm[0].center_x) * (x - t_1rdCycleAlgorithm[0].center_x))
 				+ ((y - t_1rdCycleAlgorithm[0].center_y) * (y - t_1rdCycleAlgorithm[0].center_y)); // C² = A² + B²
 
-
 			if ((C2 <= (t_1rdCycleAlgorithm[0].radius * t_1rdCycleAlgorithm[0].radius))
 				&& (C2 >= (t_1rdCycleAlgorithm[1].radius * t_1rdCycleAlgorithm[1].radius))) // r² < C² < R²이면 원 안에 있다.
+#endif
 			{
 				// 이진 탐색 기법 사용
 				m = (float)(t_1rdCycleAlgorithm[0].center_y - y) / (float)(x - t_1rdCycleAlgorithm[0].center_x);
@@ -508,17 +539,32 @@ CTouchRecognizeDlg::CTouchRecognizeDlg(CWnd* pParent /*=nullptr*/)
 					}
 				}
 			}
+#if 1
 			else
 			{
 				t_BinaryResultTable[x - 320][y - 158] = -1;
 			}
+#endif
 		}
 	}
+
 	end_init_time = GetTickCount64();
 	//display_text.Format(_T("이진 탐색 알고리즘 테이블 초기화 끝!\n경과시간 : %dms"), end_init_time - start_init_time);
 	//SetDlgItemText(IDC_STATIC_VALUE, display_text);
 	// 이진 탐색 알고리즘 테이블 초기화 끝
 	init_time = end_init_time - start_init_time;
+
+#elif (SEL_CYCLE_ALGORITHM==8)
+
+	slopeTree = insert(slopeTree, 4);
+	slopeTree = insert(slopeTree, 1);
+	slopeTree = insert(slopeTree, 0);
+	slopeTree = insert(slopeTree, 2);
+	slopeTree = insert(slopeTree, 3);
+	slopeTree = insert(slopeTree, 7);
+	slopeTree = insert(slopeTree, 5);
+	slopeTree = insert(slopeTree, 8);
+	slopeTree = insert(slopeTree, 6);
 
 #endif
 
@@ -1680,6 +1726,40 @@ void CTouchRecognizeDlg::CheckPointAndDisplay(CPoint point)
 				}
 				
 
+#elif (SEL_CYCLE_ALGORITHM==8)
+				m = (float)(t_1rdCycleAlgorithm[0].center_y - point.y) / (float)(point.x - t_1rdCycleAlgorithm[0].center_x);
+				if ((point.x - t_1rdCycleAlgorithm[0].center_x == 0))
+					m = 400;
+				M = m * 100;
+
+				if (point.x >= t_1rdCycleAlgorithm[0].center_x)
+				{
+					if (point.y <= t_1rdCycleAlgorithm[0].center_y)
+					{
+						//1사분면, 그냥 그대로
+					}
+					else
+					{
+						//4사분면
+					}
+				}
+				else
+				{
+					if (point.y <= t_1rdCycleAlgorithm[0].center_y)
+					{
+						//2사분면
+					}
+					else
+					{
+						//3사분면
+					}
+				}
+
+#if (CYCLE_TEST!=1)
+				display_text.Format(_T("Inside, idx : %d, M : %d, (%d,%d)"),M, areaSelect, point.x, point.y);
+#endif
+				
+
 #endif
 			}
 			else
@@ -1751,3 +1831,5 @@ inline int compare(int middle, int searchnum)
 	return (searchnum > t_IntegerSlopeTable100[middle]) ? -1 : 
 		((t_IntegerSlopeTable100[middle + 1] <= searchnum) && (searchnum <= t_IntegerSlopeTable100[middle])) ? 0 : 1;
 }
+
+#endif
