@@ -13,11 +13,11 @@
 #define SEL_RECTANGLE_ALGORITHM	1
 #define SEL_POLYGON_RANGE	0
 #define SEL_POLYGON_ALGORITHM 1
-#define SEL_CYCLE_ALGORITHM	8 	// 0 ~ 7번 알고리즘이 존재한다
+#define SEL_CYCLE_ALGORITHM	7 	// 0 ~ 8번 알고리즘이 존재한다
 
 #define PI 3.141592653589f
 
-#define TEST_COUNT 10000000
+#define TEST_COUNT 1000000
 #define CIRCLE_TEST 0
 #define RECTANGLE_TEST 0
 #define POLYGON_TEST 0
@@ -25,22 +25,28 @@
 #define SEL_DIVIDE 0
 #define ABS_IS_LEFT 0
 
+
+typedef struct node {
+	int data;
+	struct node* left;
+	struct node* right;
+}node;
+
+node* slopeTree;
+
 // compare 구현
 inline int compare(int middle, int searchnum);
 inline int minus_compare(int middle, int searchnum);
 int binsearch(int searchnum, int left, int right);
 int minus_binsearch(int searchnum, int left, int right);
 node* insert(node* root, int data);
-
+inline int bintree_compare(int middle, int searchnum);
+int bintree_search(int M);
+inline int bintree_reverse_compare(int middle, int searchnum);
+int bintree_reverse_search(int M);
 #endif
 
-typedef struct node { 
-	int data; 
-	struct node* left; 
-	struct node* right; 
-}node;
 
-node* slopeTree;
 
 node* insert(node* root, int data)
 {
@@ -1727,9 +1733,13 @@ void CTouchRecognizeDlg::CheckPointAndDisplay(CPoint point)
 				
 
 #elif (SEL_CYCLE_ALGORITHM==8)
+				if (point.x == t_1rdCycleAlgorithm[0].center_x)
+				{
+					point.x = point.x - 1;
+				}
 				m = (float)(t_1rdCycleAlgorithm[0].center_y - point.y) / (float)(point.x - t_1rdCycleAlgorithm[0].center_x);
-				if ((point.x - t_1rdCycleAlgorithm[0].center_x == 0))
-					m = 400;
+
+
 				M = m * 100;
 
 				if (point.x >= t_1rdCycleAlgorithm[0].center_x)
@@ -1737,10 +1747,12 @@ void CTouchRecognizeDlg::CheckPointAndDisplay(CPoint point)
 					if (point.y <= t_1rdCycleAlgorithm[0].center_y)
 					{
 						//1사분면, 그냥 그대로
+						areaSelect = bintree_reverse_search(M);
 					}
 					else
 					{
 						//4사분면
+						areaSelect = bintree_search(-M) + 9;
 					}
 				}
 				else
@@ -1748,15 +1760,17 @@ void CTouchRecognizeDlg::CheckPointAndDisplay(CPoint point)
 					if (point.y <= t_1rdCycleAlgorithm[0].center_y)
 					{
 						//2사분면
+						areaSelect = bintree_search(-M) + 27;
 					}
 					else
 					{
 						//3사분면
+						areaSelect = bintree_reverse_search(M) + 18;
 					}
 				}
 
 #if (CYCLE_TEST!=1)
-				display_text.Format(_T("Inside, idx : %d, M : %d, (%d,%d)"),M, areaSelect, point.x, point.y);
+				display_text.Format(_T("Inside, idx : %d, M : %d, (%d,%d)"),areaSelect, M, point.x, point.y);
 #endif
 				
 
@@ -1832,4 +1846,55 @@ inline int compare(int middle, int searchnum)
 		((t_IntegerSlopeTable100[middle + 1] <= searchnum) && (searchnum <= t_IntegerSlopeTable100[middle])) ? 0 : 1;
 }
 
-#endif
+inline int bintree_compare(int middle, int searchnum)
+{
+	return (searchnum < t_SortedIntegerSlopeTable100[middle]) ? -1 :
+		((t_SortedIntegerSlopeTable100[middle] <= searchnum) && (searchnum <= t_SortedIntegerSlopeTable100[middle + 1])) ? 0 : 1;
+}
+
+
+inline int bintree_reverse_compare(int middle, int searchnum)
+{
+	return (searchnum > t_IntegerSlopeTable100[middle]) ? -1 :
+		((t_IntegerSlopeTable100[middle] >= searchnum) && (searchnum >= t_IntegerSlopeTable100[middle + 1])) ? 0 : 1;
+}
+
+int bintree_search(int M)
+{
+	node* temp = slopeTree;
+	while (1)
+	{
+		switch (bintree_compare(temp->data, M))
+		{
+		case  -1:
+			temp = temp->left;
+			//right = middle - 1;
+			break;
+		case   0:
+			return temp->data;
+		case   1:
+			temp = temp->right;
+			//left = middle + 1;
+		}
+	}
+}
+
+int bintree_reverse_search(int M)
+{
+	node* temp = slopeTree;
+	while (1)
+	{
+		switch (bintree_reverse_compare(temp->data, M))
+		{
+		case  -1:
+			temp = temp->left;
+			//right = middle - 1;
+			break;
+		case   0:
+			return temp->data;
+		case   1:
+			temp = temp->right;
+			//left = middle + 1;
+		}
+	}
+}
