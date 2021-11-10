@@ -13,17 +13,18 @@
 #define SEL_RECTANGLE_ALGORITHM	1
 #define SEL_POLYGON_RANGE	0
 #define SEL_POLYGON_ALGORITHM 1
-#define SEL_CYCLE_ALGORITHM	7 	// 0 ~ 8번 알고리즘이 존재한다
+#define SEL_CYCLE_ALGORITHM	8// 0 ~ 8번 알고리즘이 존재한다
 
 #define PI 3.141592653589f
 
-#define TEST_COUNT 1000000
+#define TEST_COUNT 10000000
 #define CIRCLE_TEST 0
 #define RECTANGLE_TEST 0
 #define POLYGON_TEST 0
-#define CYCLE_TEST 0
+#define CYCLE_TEST 1
 #define SEL_DIVIDE 0
 #define ABS_IS_LEFT 0
+#define BINARY_TREE_FUNC 0
 
 
 typedef struct node {
@@ -1328,6 +1329,7 @@ void CTouchRecognizeDlg::CheckPointAndDisplay(CPoint point)
 		int M;
 		int divisor; // 기울기 알고리즘에서 나눗셈 하지 않기 위함
 		const int* t_SlopeTable;
+		node* temp;
 
 
 #if (CYCLE_TEST==1)
@@ -1606,7 +1608,7 @@ void CTouchRecognizeDlg::CheckPointAndDisplay(CPoint point)
 								areaSelect = i;
 								break;
 							}
-							else if (t_IntegerSlopeTable100[8 - i] * divisor >= M) 
+							else if (t_IntegerSlopeTable100[8 - i] * divisor >= M)
 							{
 								areaSelect = 8 - i;
 								break;
@@ -1675,7 +1677,7 @@ void CTouchRecognizeDlg::CheckPointAndDisplay(CPoint point)
 				display_text.Format(_T("Inside, M : %d, idx : %d, (%d,%d)"), M, areaSelect, point.x, point.y);
 #endif
 #elif (SEL_CYCLE_ALGORITHM==6)
-// 이진 탐색 기법 사용
+				// 이진 탐색 기법 사용
 				m = (float)(t_1rdCycleAlgorithm[0].center_y - point.y) / (float)(point.x - t_1rdCycleAlgorithm[0].center_x);
 
 
@@ -1712,9 +1714,9 @@ void CTouchRecognizeDlg::CheckPointAndDisplay(CPoint point)
 				display_text.Format(_T("Inside, M : %d, idx : %d, (%d,%d)"), M, areaSelect, point.x, point.y);
 #endif
 #elif (SEL_CYCLE_ALGORITHM==7)
-				/*if ((point.x >= t_1rdCycleAlgorithm[0].center_x- t_1rdCycleAlgorithm[0].radius) 
-					&& (point.x <= t_1rdCycleAlgorithm[0].center_x + t_1rdCycleAlgorithm[0].radius) 
-					&& (point.y >= t_1rdCycleAlgorithm[0].center_y - t_1rdCycleAlgorithm[0].radius) 
+				/*if ((point.x >= t_1rdCycleAlgorithm[0].center_x- t_1rdCycleAlgorithm[0].radius)
+					&& (point.x <= t_1rdCycleAlgorithm[0].center_x + t_1rdCycleAlgorithm[0].radius)
+					&& (point.y >= t_1rdCycleAlgorithm[0].center_y - t_1rdCycleAlgorithm[0].radius)
 					&& (point.y <= t_1rdCycleAlgorithm[0].center_y - t_1rdCycleAlgorithm[0].radius))
 				*/
 				areaSelect = t_BinaryResultTable[point.x - 320][point.y - 158];
@@ -1730,7 +1732,7 @@ void CTouchRecognizeDlg::CheckPointAndDisplay(CPoint point)
 					display_text.Format(_T("Inside, init time : %dms, idx : %d, (%d,%d)"), init_time, areaSelect, point.x, point.y);
 #endif
 				}
-				
+
 
 #elif (SEL_CYCLE_ALGORITHM==8)
 				if (point.x == t_1rdCycleAlgorithm[0].center_x)
@@ -1742,17 +1744,59 @@ void CTouchRecognizeDlg::CheckPointAndDisplay(CPoint point)
 
 				M = m * 100;
 
+				temp = slopeTree;
 				if (point.x >= t_1rdCycleAlgorithm[0].center_x)
 				{
 					if (point.y <= t_1rdCycleAlgorithm[0].center_y)
 					{
+#if(BINARY_TREE_FUNC)
 						//1사분면, 그냥 그대로
 						areaSelect = bintree_reverse_search(M);
+
+#else
+						while (1)
+						{
+							switch (bintree_reverse_compare(temp->data, M))
+							{
+							case  -1:
+								temp = temp->left;
+								//right = middle - 1;
+								break;
+							case   0:
+								areaSelect = (temp->data);
+								goto EXIT;
+							case   1:
+								temp = temp->right;
+								//left = middle + 1;
+							}
+						}
+#endif
+
 					}
 					else
 					{
 						//4사분면
+#if(BINARY_TREE_FUNC)
 						areaSelect = bintree_search(-M) + 9;
+
+#else
+						while (1)
+						{
+							switch (bintree_compare(temp->data, -M))
+							{
+							case  -1:
+								temp = temp->left;
+								//right = middle - 1;
+								break;
+							case   0:
+								areaSelect = (temp->data) + 9;
+								goto EXIT;
+							case   1:
+								temp = temp->right;
+								//left = middle + 1;
+							}
+						}
+#endif
 					}
 				}
 				else
@@ -1760,19 +1804,59 @@ void CTouchRecognizeDlg::CheckPointAndDisplay(CPoint point)
 					if (point.y <= t_1rdCycleAlgorithm[0].center_y)
 					{
 						//2사분면
+#if(BINARY_TREE_FUNC)
 						areaSelect = bintree_search(-M) + 27;
+#else
+						while (1)
+						{
+							switch (bintree_compare(temp->data, -M))
+							{
+							case  -1:
+								temp = temp->left;
+								//right = middle - 1;
+								break;
+							case   0:
+								areaSelect = (temp->data) + 27;
+								goto EXIT;
+							case   1:
+								temp = temp->right;
+								//left = middle + 1;
+							}
+						}
+#endif
 					}
 					else
 					{
 						//3사분면
+#if(BINARY_TREE_FUNC)
 						areaSelect = bintree_reverse_search(M) + 18;
+#else
+						while (1)
+						{
+							switch (bintree_reverse_compare(temp->data, M))
+							{
+							case  -1:
+								temp = temp->left;
+								//right = middle - 1;
+								break;
+							case   0:
+								areaSelect = (temp->data) + 18;
+								goto EXIT;
+							case   1:
+								temp = temp->right;
+								//left = middle + 1;
+							}
+						}
+#endif
 					}
 				}
+			EXIT:
+				{}
 
 #if (CYCLE_TEST!=1)
-				display_text.Format(_T("Inside, idx : %d, M : %d, (%d,%d)"),areaSelect, M, point.x, point.y);
+				display_text.Format(_T("Inside, idx : %d, M : %d, (%d,%d)"), areaSelect, M, point.x, point.y);
 #endif
-				
+
 
 #endif
 			}
